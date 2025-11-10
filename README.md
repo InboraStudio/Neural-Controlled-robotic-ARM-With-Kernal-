@@ -2,6 +2,7 @@
 
 ### About
 - Low-level EMG robotic arm controller written in pure C/ASM signal capture, filtering, and actuation from memory addresses up
+- Youtube Demo https://www.youtube.com/watch?v=1ESYieNTGVo
 
 
 ---
