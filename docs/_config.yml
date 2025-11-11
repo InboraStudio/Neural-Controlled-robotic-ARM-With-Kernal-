@@ -1,0 +1,4 @@
+theme: jekyll-theme-minimal
+title: Neural-Controlled Robotic ARM
+description: Bare-metal EMG signal processing system for robotic arm control
+show_downloads: true
