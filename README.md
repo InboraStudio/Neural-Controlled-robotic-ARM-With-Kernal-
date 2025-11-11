@@ -3,6 +3,7 @@
 ### About
 - Low-level EMG robotic arm controller written in pure C/ASM signal capture, filtering, and actuation from memory addresses up
 - Youtube Demo https://www.youtube.com/watch?v=1ESYieNTGVo
+- Web Docs https://inborastudio.github.io/Neural-Controlled-robotic-ARM-With-Kernal
 
 
 ---
@@ -160,5 +161,9 @@ avrdude -c arduino -p m328p -P COM3 -b 115200 -U flash:w:emg_arm.hex
 - Use differential amplifiers and a DC blocking capacitor on input stages.
 - Recommended isolation IC: AD620 or INA128 with ±9V rails and 1 MΩ input impedance.
 
+### Credits 
+- Kernel Design by [Seo Park Jun](https://github.com/SeoParkjun)
+- System Staging by [Chethan Yadav](https://github.com/chethanyadav456)
+- Core System Designer Ofc me
 
 
