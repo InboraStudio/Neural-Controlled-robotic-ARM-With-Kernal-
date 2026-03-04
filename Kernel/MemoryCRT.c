@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#define MOTOR_CTRL_REG   (*(volatile uint8_t*)0x0020)
+#define MOTOR_CTRL_REG   (*(volatile uint8_t*)0x00201)
 #define SENSOR_DATA_REG  (*(volatile uint16_t*)0x0030)
 #define STATUS_FLAG_REG  (*(volatile uint8_t*)0x0040)
 
