@@ -424,40 +424,53 @@ uint32_t brutal_crc32(uint8_t *data, uint16_t length) {
 volatile uint8_t control_state = 0;
 volatile uint32_t control_iteration = 0;
 
-void brutal_control_loop() {
+void brutal_control_loop()
+{
+    // Static controllers (stay in fast memory if possible)
     static PID_Controller pid_a = {100, 10, 50, 1000, 0};
     static PID_Controller pid_b = {100, 10, 50, 1000, 0};
-    static SensorFusion fusion = {0, 0, 0, 1000, 1000, 1000};
-    static NeuralNet net = {NEURAL_WEIGHTS_BASE, NEURAL_STATES_BASE, 16, 2};
+    static SensorFusion fusion  = {0, 0, 0, 1000, 1000, 1000};
+    static NeuralNet net        = {NEURAL_WEIGHTS_BASE, NEURAL_STATES_BASE, 16, 2};
+
     
-    // Read sensors
-    uint16_t sensor_raw_0 = SENSOR_ANALOG_0;
-    uint16_t sensor_raw_1 = SENSOR_ANALOG_1;
-    uint16_t sensor_raw_2 = SENSOR_ANALOG_2;
-    uint8_t sensor_digital = SENSOR_DIGITAL;
-    
-    // Sensor fusion
-    Vector3i measurement = {(int16_t)sensor_raw_0, (int16_t)sensor_raw_1, (int16_t)sensor_raw_2};
+    uint32_t iter = control_iteration;
+
+    const int16_t s0 = (int16_t)SENSOR_ANALOG_0;
+    const int16_t s1 = (int16_t)SENSOR_ANALOG_1;
+    const int16_t s2 = (int16_t)SENSOR_ANALOG_2;
+    const int16_t sd = (int16_t)SENSOR_DIGITAL;
+
+    Vector3i measurement = {s0, s1, s2};
     brutal_sensor_fusion(&fusion, measurement, 100);
-    
-    // Neural network inference
-    int16_t nn_input[8] = {
-        fusion.x_est, fusion.y_est, fusion.z_est, sensor_digital,
-        pid_output_a, pid_output_b, 0, 0
-    };
-    int16_t nn_output[4] = {0, 0, 0, 0};
+
+   
+    int16_t pid_out_a = brutal_pid_controller_single(&pid_a, fusion.x_est);
+    int16_t pid_out_b = brutal_pid_controller_single(&pid_b, fusion.y_est);
+
+   
+    int16_t nn_input[8];
+    nn_input[0] = fusion.x_est;
+    nn_input[1] = fusion.y_est;
+    nn_input[2] = fusion.z_est;
+    nn_input[3] = sd;
+    nn_input[4] = pid_out_a;
+    nn_input[5] = pid_out_b;
+    nn_input[6] = 0;
+    nn_input[7] = 0;
+
+    int16_t nn_output[4];
+
     neural_forward_pass(&net, nn_input, nn_output);
-    
-    // PID control
-    brutal_pid_controller(&pid_a, &pid_b, fusion.x_est, fusion.y_est);
-    
-    // Torque ripple compensation
-    brutal_torque_ripple_compensation((int16_t*)NEURAL_WEIGHTS_BASE, 
-                                     control_iteration % 256,
-                                     &MOTOR_PWM_A,
-                                     &MOTOR_PWM_B);
-    
-    // Status update
+
+    brutal_torque_ripple_compensation(
+        (int16_t*)NEURAL_WEIGHTS_BASE,
+        (uint8_t)(iter & 0xFF),   // faster than % 256
+        &MOTOR_PWM_A,
+        &MOTOR_PWM_B
+    );
+
     STATUS_REG = 0xAA;
-    DEBUG_REG = control_iteration++;
+    DEBUG_REG  = iter;
+
+    control_iteration = iter + 1;
 }
